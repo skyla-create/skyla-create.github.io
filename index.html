@@ -3,20 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to My Website</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-    </style>
+    <title>Teachable Machine Integration</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 </head>
 <body>
-    <h1>Hello, World!</h1>
-    <p>Welcome to my first GitHub Pages website!</p>
+    <h1>Welcome to My Teachable Machine Demo</h1>
+    <video id="webcam" autoplay playsinline width="320" height="240"></video>
+    <p id="prediction">Loading...</p>
+    <script>
+        async function loadModel() {
+            const modelURL = './teachable-machine/model.json'; // Update this path if needed
+            const model = await tf.loadLayersModel(modelURL);
+            console.log('Model Loaded');
+            return model;
+        }
+
+        async function startWebcam() {
+            const webcam = document.getElementById('webcam');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            webcam.srcObject = stream;
+        }
+
+        async function run() {
+            const model = await loadModel();
+            await startWebcam();
+
+            const webcam = document.getElementById('webcam');
+            const predictionElement = document.getElementById('prediction');
+
+            setInterval(async () => {
+                const webcamTensor = tf.browser.fromPixels(webcam).expandDims(0).toFloat();
+                const prediction = model.predict(webcamTensor);
+                const values = prediction.arraySync()[0];
+                const maxIndex = values.indexOf(Math.max(...values));
+                predictionElement.innerText = `Prediction: Class ${maxIndex}`;
+                webcamTensor.dispose();
+            }, 1000);
+        }
+
+        run();
+    </script>
 </body>
 </html>
