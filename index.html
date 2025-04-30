@@ -7,12 +7,13 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 </head>
 <body>
-    <h1>Welcome to My Teachable Machine Demo</h1>
+    <h1>Teachable Machine Demo</h1>
     <video id="webcam" autoplay playsinline width="320" height="240"></video>
-    <p id="prediction">Loading...</p>
+    <p id="prediction">Prediction: Loading...</p>
+    <p id="confidence">Confidence: Loading...</p>
     <script>
         async function loadModel() {
-            const modelURL = './teachable-machine/model.json'; // Update this path if needed
+            const modelURL = './teachable-machine/model.json'; // Path to your model.json
             const model = await tf.loadLayersModel(modelURL);
             console.log('Model Loaded');
             return model;
@@ -25,20 +26,33 @@
         }
 
         async function run() {
+            // Load the Teachable Machine model
             const model = await loadModel();
             await startWebcam();
 
             const webcam = document.getElementById('webcam');
             const predictionElement = document.getElementById('prediction');
+            const confidenceElement = document.getElementById('confidence');
 
             setInterval(async () => {
+                // Capture frame from webcam
                 const webcamTensor = tf.browser.fromPixels(webcam).expandDims(0).toFloat();
+
+                // Make predictions
                 const prediction = model.predict(webcamTensor);
                 const values = prediction.arraySync()[0];
-                const maxIndex = values.indexOf(Math.max(...values));
+
+                // Find the class with the highest confidence
+                const maxConfidence = Math.max(...values);
+                const maxIndex = values.indexOf(maxConfidence);
+
+                // Display the predicted class and confidence
                 predictionElement.innerText = `Prediction: Class ${maxIndex}`;
+                confidenceElement.innerText = `Confidence: ${(maxConfidence * 100).toFixed(2)}%`;
+
+                // Dispose of the tensor
                 webcamTensor.dispose();
-            }, 1000);
+            }, 1000); // Update every second
         }
 
         run();
